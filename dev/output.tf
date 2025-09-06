@@ -1,7 +1,7 @@
 output "project_id" {
-  value = google_project.project.id
+  value = var.project_id
 }
 
 output "region" {
-  value = google_project.project.region
+  value = var.region
 }
