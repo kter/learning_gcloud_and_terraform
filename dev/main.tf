@@ -12,4 +12,10 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+
+  default_labels = {
+    "Managed by" = "Terraform"
+    "Environment" = "dev"
+    "Repository" = "learning_gcloud_and_terraform"
+  }
 }
