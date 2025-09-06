@@ -1,11 +1,11 @@
 variable "project_id" {
-  type = string
+  type        = string
   description = "Project ID"
-  default = "gcloud-and-terraform"
+  default     = "gcloud-and-terraform"
 }
 
 variable "region" {
-  type = string
+  type        = string
   description = "Region"
-  default = "asia-northeast1"
+  default     = "asia-northeast1"
 }

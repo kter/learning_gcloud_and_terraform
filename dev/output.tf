@@ -3,5 +3,5 @@ output "project_id" {
 }
 
 output "region" {
-    value = google_project.project.region
+  value = google_project.project.region
 }
