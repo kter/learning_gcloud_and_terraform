@@ -19,7 +19,7 @@ resource "google_cloud_run_v2_service" "service" {
         }
         resources {
           limits = {
-            "cpu" = "0.5"
+            "cpu" = "1"
             "memory" = "0.5Gi"
           }
         }
@@ -29,4 +29,20 @@ resource "google_cloud_run_v2_service" "service" {
         }
     }
   }
+}
+
+resource "google_vpc_access_connector" "connector" {
+  name = "vpc-connector"
+  project = var.project_id
+  region = var.region
+  network = data.google_compute_network.vpc_network.self_link
+  // subnetworkと重複しないCIDRを指定
+  ip_cidr_range = "10.0.1.0/28"
+  max_instances = 3
+  min_instances = 2
+}
+
+data "google_compute_network" "vpc_network" {
+  name = "vpc-network"
+  project = var.project_id
 }
