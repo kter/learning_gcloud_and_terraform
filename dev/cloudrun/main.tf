@@ -12,6 +12,12 @@ resource "google_cloud_run_v2_service" "service" {
   deletion_protection = false
 
   template {
+    vpc_access {
+      egress = "PRIVATE_RANGES_ONLY"
+      network_interfaces {
+        subnetwork = "projects/${var.project_id}/regions/${var.region}/subnetworks/${data.google_compute_subnetwork.subnetwork.name}"
+      }
+    }
     containers {
         image = "nginx:1.28.0-alpine3.21"
         ports {
@@ -31,18 +37,8 @@ resource "google_cloud_run_v2_service" "service" {
   }
 }
 
-resource "google_vpc_access_connector" "connector" {
-  name = "vpc-connector"
+data "google_compute_subnetwork" "subnetwork" {
+  name = "subnetwork"
   project = var.project_id
   region = var.region
-  network = data.google_compute_network.vpc_network.self_link
-  // subnetworkと重複しないCIDRを指定
-  ip_cidr_range = "10.0.1.0/28"
-  max_instances = 3
-  min_instances = 2
-}
-
-data "google_compute_network" "vpc_network" {
-  name = "vpc-network"
-  project = var.project_id
 }
