@@ -25,11 +25,21 @@ resource "google_compute_backend_service" "backend_service" {
   }
 }
 
-// URL Map
-resource "google_compute_url_map" "url_map" {
-  name = "url-map"
+// URL Map (https)
+resource "google_compute_url_map" "https_url_map" {
+  name = "https-url-map"
   project = var.project_id
   default_service = google_compute_backend_service.backend_service.self_link
+}
+
+// URL Map (http)
+resource "google_compute_url_map" "http_url_map" {
+    name = "http-url-map"
+    project = var.project_id
+    default_url_redirect {
+        https_redirect = true
+        strip_query = false
+    }
 }
 
 // Certificate
@@ -45,15 +55,15 @@ resource "google_compute_managed_ssl_certificate" "certificate" {
 resource "google_compute_target_https_proxy" "target_https_proxy" {
   name = "target-https-proxy"
   project = var.project_id
-  url_map = google_compute_url_map.url_map.self_link
+  url_map = google_compute_url_map.https_url_map.self_link
   ssl_certificates = [google_compute_managed_ssl_certificate.certificate.self_link]
 }
 
 // Target HTTP Proxy
 resource "google_compute_target_http_proxy" "target_http_proxy" {
-  name = "target-http-proxy"
-  project = var.project_id
-  url_map = google_compute_url_map.url_map.self_link
+    name = "target-http-proxy"
+    project = var.project_id
+    url_map = google_compute_url_map.http_url_map.self_link
 }
 
 // Global Address (AWSとは違いIPで設定)
