@@ -49,13 +49,20 @@ resource "google_compute_target_https_proxy" "target_https_proxy" {
   ssl_certificates = [google_compute_managed_ssl_certificate.certificate.self_link]
 }
 
+// Target HTTP Proxy
+resource "google_compute_target_http_proxy" "target_http_proxy" {
+  name = "target-http-proxy"
+  project = var.project_id
+  url_map = google_compute_url_map.url_map.self_link
+}
+
 // Global Address (AWSとは違いIPで設定)
 resource "google_compute_global_address" "address" {
   name = "address"
   project = var.project_id
 }
 
-// Forwarding Rule
+// Forwarding Rule (https)
 resource "google_compute_global_forwarding_rule" "https_rule" {
   name = "https-rule"
   project = var.project_id
@@ -64,6 +71,27 @@ resource "google_compute_global_forwarding_rule" "https_rule" {
   ip_address = google_compute_global_address.address.address
   target = google_compute_target_https_proxy.target_https_proxy.self_link
   port_range = "443"
+}
+
+// Forwarding Rule (http)
+resource "google_compute_global_forwarding_rule" "http_rule" {
+  name = "http-rule"
+  project = var.project_id
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  ip_protocol = "TCP"
+  ip_address = google_compute_global_address.address.address
+  target = google_compute_target_http_proxy.target_http_proxy.self_link
+  port_range = "80"
+}
+
+// Authorize access LoadBalancer to Cloud Run
+resource "google_cloud_run_service_iam_member" "member" {
+    service = data.google_cloud_run_v2_service.service.name
+    location = var.region
+    project = var.project_id
+    // ロールはroles/run.invokerを指定
+    role = "roles/run.invoker"
+    member = "allUsers"
 }
 
 data "google_compute_network" "vpc_network" {
