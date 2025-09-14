@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-_opomoq)x&lta)$5+81w!o#^5&sg!6s)z4iu6orar3l&q=75n&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['test.gcp.tomohiko.io']
 
 
 # Application definition

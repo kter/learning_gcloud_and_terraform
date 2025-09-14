@@ -116,7 +116,7 @@ data "google_compute_subnetwork" "subnetwork" {
 }
 
 data "google_cloud_run_v2_service" "service" {
-  name = "nginx-service"
+  name = "django-service"
   location = var.region
   project = var.project_id
 }
