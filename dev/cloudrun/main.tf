@@ -5,8 +5,8 @@ terraform {
   }
 }
 
-resource "google_cloud_run_v2_service" "service" {
-  name     = "nginx-service"
+resource "google_cloud_run_v2_service" "django_service" {
+  name     = "django-service"
   location = var.region
   project  = var.project_id
   deletion_protection = false
@@ -19,9 +19,10 @@ resource "google_cloud_run_v2_service" "service" {
       }
     }
     containers {
-        image = "asia-northeast1-docker.pkg.dev/gcloud-and-terraform/test/nginx:latest"
+        image = "${data.google_artifact_registry_repository.django_app_repository.registry_uri}/app:latest"
+
         ports {
-            container_port = 80
+            container_port = 8000
         }
         resources {
           limits = {
@@ -41,4 +42,10 @@ data "google_compute_subnetwork" "subnetwork" {
   name = "subnetwork"
   project = var.project_id
   region = var.region
+}
+
+data "google_artifact_registry_repository" "django_app_repository" {
+  repository_id = "django-app"
+  project = var.project_id
+  location = var.region
 }
