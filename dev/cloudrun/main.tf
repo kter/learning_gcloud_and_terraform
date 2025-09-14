@@ -19,7 +19,7 @@ resource "google_cloud_run_v2_service" "service" {
       }
     }
     containers {
-        image = "nginx:1.28.0-alpine3.21"
+        image = "asia-northeast1-docker.pkg.dev/gcloud-and-terraform/test/nginx:latest"
         ports {
             container_port = 80
         }
