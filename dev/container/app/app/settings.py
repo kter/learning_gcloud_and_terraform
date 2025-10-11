@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-_opomoq)x&lta)$5+81w!o#^5&sg!6s)z4iu6orar3l&q=75n&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['test.gcp.tomohiko.io']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'test.gcp.tomohiko.io').split(',')
 
 
 # Application definition
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'todo',
 ]
 
 MIDDLEWARE = [
@@ -72,12 +74,63 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+ENV = os.environ.get('ENV', 'local')
+
+if ENV == 'local':
+    # ローカル開発環境: 通常のPostgreSQL接続
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'todoapp'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
     }
-}
+else:
+    # GCP環境: Cloud SQL Python Connectorを使用してIAM認証
+    from google.cloud.sql.connector import Connector
+    import pg8000
+
+    # Cloud SQL Connectorのインスタンスを作成
+    connector = Connector()
+
+    def getconn():
+        conn = connector.connect(
+            os.environ.get('INSTANCE_CONNECTION_NAME'),
+            "pg8000",
+            user=os.environ.get('DB_USER'),
+            db=os.environ.get('DB_NAME'),
+            enable_iam_auth=True,
+        )
+        return conn
+
+    # DjangoでCloud SQL Connectorを使用するための設定
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'database-dev'),
+            'USER': os.environ.get('DB_USER'),
+            'OPTIONS': {
+                # Cloud SQL Connectorを使用するための設定
+                'connect_timeout': 10,
+            },
+        }
+    }
+
+    # psycopg2の代わりにpg8000を使用するため、カスタム接続を設定
+    import django.db.backends.postgresql.base as postgresql_base
+
+    # 元のget_new_connectionメソッドを保存
+    original_get_new_connection = postgresql_base.DatabaseWrapper.get_new_connection
+
+    def custom_get_new_connection(self, conn_params):
+        # Cloud SQL Connectorを使用して接続を取得
+        return getconn()
+
+    # DatabaseWrapperのget_new_connectionメソッドを置き換え
+    postgresql_base.DatabaseWrapper.get_new_connection = custom_get_new_connection
 
 
 # Password validation
