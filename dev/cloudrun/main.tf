@@ -54,7 +54,7 @@ resource "google_cloud_run_v2_service" "django_service" {
         }
         env {
           name = "ALLOWED_HOSTS"
-          value = "test.gcp.tomohiko.io"
+          value = "dev.gcp.tomohiko.io"
         }
         env {
           name = "INSTANCE_CONNECTION_NAME"

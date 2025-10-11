@@ -47,7 +47,7 @@ resource "google_compute_managed_ssl_certificate" "certificate" {
   name = "certificate"
   project = var.project_id
   managed {
-    domains = ["test.gcp.tomohiko.io"]
+    domains = ["dev.gcp.tomohiko.io"]
   }
 }
 
@@ -120,3 +120,21 @@ data "google_cloud_run_v2_service" "service" {
   location = var.region
   project = var.project_id
 }
+
+// DNS record to associate domain with load balancer
+resource "google_dns_record_set" "dev_domain" {
+  name = "dev.gcp.tomohiko.io."
+  type = "A"
+  ttl  = 300
+
+  managed_zone = data.google_dns_managed_zone.dns_zone.name
+  project = var.project_id
+
+  rrdatas = [google_compute_global_address.address.address]
+}
+
+data "google_dns_managed_zone" "dns_zone" {
+  name = "dev-gcp-tomohiko-io"
+  project = var.project_id
+}
+
