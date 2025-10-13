@@ -90,6 +90,7 @@ resource "google_cloud_run_v2_job" "db_migrate" {
   name     = "db-migrate"
   location = var.region
   project  = var.project_id
+  deletion_protection = false
 
   template {
     template {
