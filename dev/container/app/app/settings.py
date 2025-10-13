@@ -103,6 +103,8 @@ else:
             user=os.environ.get('DB_USER'),
             db=os.environ.get('DB_NAME'),
             enable_iam_auth=True,
+            # ip_typeを指定しないとPublic IP (PRIMARY)を探して失敗してしまう
+            ip_type="PRIVATE",
         )
         return conn
 

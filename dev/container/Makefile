@@ -5,3 +5,6 @@ buildpush:
 	cd app && \
 	docker build --platform linux/x86_64 -t $(REGISTRY_URL)/app:latest . && \
 	docker push $(REGISTRY_URL)/app:latest
+
+migrate:
+	gcloud run jobs execute db-migrate --region asia-northeast1
