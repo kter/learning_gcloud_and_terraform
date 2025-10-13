@@ -15,10 +15,20 @@ resource "google_compute_global_address" "private_ip_address" {
 }
 
 # Private Service Connection（VPC Peering）
+# 注意: このリソースの削除には時間がかかる場合があります
+# また、Cloud SQLなどの依存リソースが完全に削除されるまで削除できません
 resource "google_service_networking_connection" "private_vpc_connection" {
   network                 = data.google_compute_network.vpc_network.id
   service                 = "servicenetworking.googleapis.com"
   reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+
+  # 削除時にピアリング接続も自動削除
+  deletion_policy = "ABANDON"
+
+  lifecycle {
+    # 本番環境では以下をコメント解除
+    # prevent_destroy = true
+  }
 }
 
 resource "google_sql_database_instance" "database" {
@@ -43,9 +53,21 @@ resource "google_sql_database_instance" "database" {
           enabled = false
         }
     }
+
+    # 削除保護を無効化（開発環境用）
+    # 本番環境では true に設定することを推奨
     deletion_protection = false
-    
+
     depends_on = [google_service_networking_connection.private_vpc_connection]
+
+    lifecycle {
+      # 本番環境では以下をコメント解除
+      # prevent_destroy = true
+
+      # データベースの削除には時間がかかるため、タイムアウトを考慮
+      # インスタンス名が変更された場合は新しいインスタンスを先に作成
+      create_before_destroy = false
+    }
 }
 
 resource "google_sql_database" "database" {

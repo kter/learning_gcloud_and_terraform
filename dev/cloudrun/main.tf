@@ -9,7 +9,25 @@ resource "google_cloud_run_v2_service" "django_service" {
   name     = "django-service"
   location = var.region
   project  = var.project_id
+
+  # 削除保護を無効化（開発環境用）
+  # 本番環境では true に設定することを推奨
   deletion_protection = false
+
+  # VPCリソースより先に削除されるように依存関係を明示
+  depends_on = [
+    data.google_compute_subnetwork.subnetwork,
+    data.google_sql_database_instance.database
+  ]
+
+  # ライフサイクル設定
+  lifecycle {
+    # 本番環境では以下をコメント解除
+    # prevent_destroy = true
+
+    # リソース再作成時は古いリソースを削除してから新しいリソースを作成
+    create_before_destroy = false
+  }
 
   template {
     vpc_access {
@@ -90,7 +108,25 @@ resource "google_cloud_run_v2_job" "db_migrate" {
   name     = "db-migrate"
   location = var.region
   project  = var.project_id
+
+  # 削除保護を無効化（開発環境用）
+  # 本番環境では true に設定することを推奨
   deletion_protection = false
+
+  # VPCリソースより先に削除されるように依存関係を明示
+  depends_on = [
+    data.google_compute_subnetwork.subnetwork,
+    data.google_sql_database_instance.database
+  ]
+
+  # ライフサイクル設定
+  lifecycle {
+    # 本番環境では以下をコメント解除
+    # prevent_destroy = true
+
+    # リソース再作成時は古いリソースを削除してから新しいリソースを作成
+    create_before_destroy = false
+  }
 
   template {
     template {
