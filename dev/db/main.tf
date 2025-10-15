@@ -171,21 +171,76 @@ resource "google_compute_instance" "bastion" {
     # access_config {}
   }
 
-  # Cloud SQL Proxyとpsqlをインストール
+  # Cloud SQL Proxyとpsqlをインストールし、IAMユーザー権限を自動付与
   metadata_startup_script = <<-EOT
     #!/bin/bash
-    set -e
-    
-    # パッケージ更新
+    set -euo pipefail
+
+    GRANTS_MARKER="/var/tmp/db_grants_applied"
+
+    if [ -f "$GRANTS_MARKER" ]; then
+      exit 0
+    fi
+
+    # パッケージ更新と必要パッケージのインストール
     apt-get update
-    
-    # PostgreSQLクライアントをインストール
-    apt-get install -y postgresql-client
-    
-    # Cloud SQL Proxyをインストール
-    curl -o /usr/local/bin/cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.8.2/cloud-sql-proxy.linux.amd64
-    chmod +x /usr/local/bin/cloud-sql-proxy
-    
+    apt-get install -y postgresql-client curl
+
+    # Cloud SQL Proxyをインストール（存在しない場合のみ）
+    if [ ! -x /usr/local/bin/cloud-sql-proxy ]; then
+      curl -sSfL -o /usr/local/bin/cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.8.2/cloud-sql-proxy.linux.amd64
+      chmod +x /usr/local/bin/cloud-sql-proxy
+    fi
+
+    INSTANCE_CONNECTION_NAME="${var.project_id}:${var.region}:${google_sql_database_instance.database.name}"
+    DB_NAME="${google_sql_database.database.name}"
+    CLOUDRUN_USER="${google_sql_user.iam_service_account_user.name}"
+    BASTION_USER="${google_sql_user.bastion_iam_user.name}"
+    POSTGRES_PASSWORD='${replace(random_password.admin_password.result, "'", "'\"'\"'")}'
+
+    echo "Starting Cloud SQL Proxy for permission grants..."
+    cloud-sql-proxy --private-ip "$INSTANCE_CONNECTION_NAME" --port 5432 --address 127.0.0.1 &
+    PROXY_PID=$!
+
+    cleanup() {
+      kill "$PROXY_PID" 2>/dev/null || true
+    }
+    trap cleanup EXIT
+
+    for _ in $(seq 1 30); do
+      if pg_isready -h 127.0.0.1 -p 5432 -U postgres >/dev/null 2>&1; then
+        break
+      fi
+      sleep 2
+    done
+
+    echo "Granting permissions to IAM users..."
+    PGPASSWORD="$POSTGRES_PASSWORD" psql \
+      -h 127.0.0.1 \
+      -p 5432 \
+      -U postgres \
+      -d "$DB_NAME" <<SQL
+    \\set ON_ERROR_STOP on
+
+    -- Cloud Run用IAMユーザーにLOGIN権限と権限を付与
+    ALTER ROLE "$CLOUDRUN_USER" WITH LOGIN;
+    GRANT CONNECT ON DATABASE "$DB_NAME" TO "$CLOUDRUN_USER";
+    GRANT USAGE ON SCHEMA public TO "$CLOUDRUN_USER";
+    GRANT ALL PRIVILEGES ON SCHEMA public TO "$CLOUDRUN_USER";
+
+    -- Bastion用IAMユーザーにLOGIN権限と権限を付与
+    ALTER ROLE "$BASTION_USER" WITH LOGIN;
+    GRANT CONNECT ON DATABASE "$DB_NAME" TO "$BASTION_USER";
+    GRANT USAGE ON SCHEMA public TO "$BASTION_USER";
+    GRANT ALL PRIVILEGES ON SCHEMA public TO "$BASTION_USER";
+
+    -- 組み込みロールを付与して既存テーブル/シーケンスにもアクセスできるようにする
+    GRANT pg_write_all_data TO "$CLOUDRUN_USER";
+    GRANT pg_write_all_data TO "$BASTION_USER";
+    GRANT pg_read_all_data TO "$BASTION_USER";
+    SQL
+
+    touch "$GRANTS_MARKER"
     echo "Bastion host setup completed" > /tmp/setup_complete
   EOT
 
@@ -231,54 +286,4 @@ resource "google_sql_user" "admin_user" {
   name = "postgres"
   instance = google_sql_database_instance.database.name
   password = random_password.admin_password.result
-}
-
-# 踏み台サーバー上で実行する権限付与スクリプト
-resource "local_file" "grant_permissions_on_bastion" {
-  filename = "${path.module}/grant_permissions_on_bastion.sh"
-  content = <<-EOT
-#!/bin/bash
-set -e
-
-echo "Starting Cloud SQL Proxy (Private IP)..."
-cloud-sql-proxy --private-ip ${var.project_id}:${var.region}:${google_sql_database_instance.database.name} &
-PROXY_PID=$!
-
-# エラー時の後処理用トラップ
-trap "kill $PROXY_PID 2>/dev/null" EXIT
-
-# Proxyの起動を待つ
-echo "Waiting for Cloud SQL Proxy to be ready..."
-sleep 5
-
-# PostgreSQLに接続して権限を付与
-echo "Granting permissions to IAM users..."
-PGPASSWORD='${random_password.admin_password.result}' psql \
-  -h 127.0.0.1 \
-  -p 5432 \
-  -U postgres \
-  -d ${google_sql_database.database.name} \
-  <<'SQL'
--- Cloud Run用IAMユーザーにLOGIN権限と権限を付与
-ALTER ROLE "${google_sql_user.iam_service_account_user.name}" WITH LOGIN;
-GRANT ALL PRIVILEGES ON SCHEMA public TO "${google_sql_user.iam_service_account_user.name}";
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "${google_sql_user.iam_service_account_user.name}";
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "${google_sql_user.iam_service_account_user.name}";
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO "${google_sql_user.iam_service_account_user.name}";
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO "${google_sql_user.iam_service_account_user.name}";
-
--- Bastion用IAMユーザーにLOGIN権限と権限を付与
-ALTER ROLE "${google_sql_user.bastion_iam_user.name}" WITH LOGIN;
-GRANT ALL PRIVILEGES ON SCHEMA public TO "${google_sql_user.bastion_iam_user.name}";
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "${google_sql_user.bastion_iam_user.name}";
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "${google_sql_user.bastion_iam_user.name}";
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO "${google_sql_user.bastion_iam_user.name}";
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO "${google_sql_user.bastion_iam_user.name}";
-SQL
-
-echo "Permissions granted successfully!"
-echo "Cleaning up..."
-  EOT
-  
-  file_permission = "0755"
 }

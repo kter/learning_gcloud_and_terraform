@@ -1,54 +1,30 @@
 # Note
 
 DB初回起動時はIAM認証ユーザーにDB作成権限が付与されていないため、管理ユーザーを使用して付与する必要がある。
-管理ユーザーは踏み台GCE経由でアクセスする。
+現在は踏み台GCEインスタンスのスタートアップスクリプトが自動でCloud SQL Proxyを起動し、必要なGRANT文を実行する。
 
-## 手順
+## 初回権限付与の流れ
 
-スクリプト(terraform applyで生成される)をGCEにコピー
+- `terraform apply` で Cloud SQL と Bastion を作成すると、起動時に自動で権限付与が実行される。
+- 完了すると `/tmp/setup_complete` ファイルが作成されるので、必要に応じて確認する。
 
-```bash
-gcloud compute scp grant_permissions_on_bastion.sh bastion-default:/tmp/ \
-  --zone=asia-northeast1-a \
-  --project=gcloud-and-terraform \
-  --tunnel-through-iap
-```
+## 権限付与を再実行したい場合
 
-踏み台サーバーにログイン
+再実行が必要な場合は踏み台サーバー上で以下を実行する。
 
 ```bash
 gcloud compute ssh bastion-default \
   --zone=asia-northeast1-a \
   --project=gcloud-and-terraform \
   --tunnel-through-iap
-```
 
-踏み台サーバーで権限付与スクリプトを実行
+sudo rm -f /var/tmp/db_grants_applied
+sudo systemctl restart google-startup-scripts.service
 
-```bash
-# セットアップが完了するまで待つ（初回起動時のみ）
-cat /tmp/setup_complete
-
-# 権限付与スクリプトを実行
-chmod +x /tmp/grant_permissions_on_bastion.sh
-/tmp/grant_permissions_on_bastion.sh
-
-# 完了したらログアウト
 exit
 ```
 
-ここまで来るとIAM認証ユーザーに権限が付与されるため、以下コマンドでマイグレートを実行できる
-
-```bash
-cd /Users/ttakahashi/workspace/learning_gcloud_and_terraform/dev/container
-make  # Dockerイメージをビルド＆プッシュ
-
-cd /Users/ttakahashi/workspace/learning_gcloud_and_terraform/dev/cloudrun
-terraform apply  # Cloud Runサービスをデプロイ
-```
-
-Flaskアプリケーションは起動時に自動でテーブルを作成するため、追加のマイグレーションジョブ実行は不要。
-
+リスタート後に `/tmp/setup_complete` が更新され、権限付与が再度実行される。
 
 ## 踏み台からCloudSQLへのログイン方法
 
