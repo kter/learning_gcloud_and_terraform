@@ -34,5 +34,5 @@ exit
 ```
 export INSTANCE_CONNECTION_NAME="gcloud-and-terraform:asia-northeast1:database-default"
 cloud-sql-proxy  --private-ip  --auto-iam-authn   --run-connection-test   --port 5432   --address 127.0.0.1   "$INSTANCE_CONNECTION_NAME"
-tomohico_takahashi_gmail_com@bastion-default:~$ psql -h 127.0.0.1 -p 5432 -U bastion@gcloud-and-terraform.iam -d postgres
+psql -h 127.0.0.1 -p 5432 -U bastion@gcloud-and-terraform.iam -d postgres
 ```
