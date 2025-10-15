@@ -45,7 +45,18 @@ make  # Dockerイメージをビルド＆プッシュ
 
 cd /Users/ttakahashi/workspace/learning_gcloud_and_terraform/dev/cloudrun
 terraform apply  # Cloud Runサービスをデプロイ
+```
 
-# マイグレーション実行
-gcloud run jobs execute db-migrate --region asia-northeast1
+Flaskアプリケーションは起動時に自動でテーブルを作成するため、追加のマイグレーションジョブ実行は不要。
+
+
+## 踏み台からCloudSQLへのログイン方法
+
+踏み台用のIAM認証を用意しているのでそれを使用してログインする
+
+
+```
+export INSTANCE_CONNECTION_NAME="gcloud-and-terraform:asia-northeast1:database-default"
+cloud-sql-proxy  --private-ip  --auto-iam-authn   --run-connection-test   --port 5432   --address 127.0.0.1   "$INSTANCE_CONNECTION_NAME"
+tomohico_takahashi_gmail_com@bastion-default:~$ psql -h 127.0.0.1 -p 5432 -U bastion@gcloud-and-terraform.iam -d postgres
 ```

@@ -85,6 +85,16 @@ resource "google_sql_user" "iam_service_account_user" {
   project = var.project_id
 }
 
+# Bastion用のIAMユーザー
+resource "google_sql_user" "bastion_iam_user" {
+  # Note: for Postgres only, GCP requires omitting the ".gserviceaccount.com" suffix
+  # from the service account email due to length limits on database usernames.
+  name     = trimsuffix(google_service_account.bastion.email, ".gserviceaccount.com")
+  instance = google_sql_database_instance.database.name
+  type     = "CLOUD_IAM_SERVICE_ACCOUNT"
+  project  = var.project_id
+}
+
 data "google_service_account" "cloudrun_service_account" {
   account_id = "cloudrun"
   project = var.project_id
@@ -130,6 +140,13 @@ resource "google_service_account" "bastion" {
 resource "google_project_iam_member" "bastion_sql_client" {
   project = var.project_id
   role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.bastion.email}"
+}
+
+# Bastion用サービスアカウントにIAM認証に必要なinstanceUser権限を付与
+resource "google_project_iam_member" "bastion_sql_instance_user" {
+  project = var.project_id
+  role    = "roles/cloudsql.instanceUser"
   member  = "serviceAccount:${google_service_account.bastion.email}"
 }
 
@@ -235,18 +252,28 @@ echo "Waiting for Cloud SQL Proxy to be ready..."
 sleep 5
 
 # PostgreSQLに接続して権限を付与
-echo "Granting permissions to IAM user: ${google_sql_user.iam_service_account_user.name}"
+echo "Granting permissions to IAM users..."
 PGPASSWORD='${random_password.admin_password.result}' psql \
   -h 127.0.0.1 \
   -p 5432 \
   -U postgres \
   -d ${google_sql_database.database.name} \
   <<'SQL'
+-- Cloud Run用IAMユーザーにLOGIN権限と権限を付与
+ALTER ROLE "${google_sql_user.iam_service_account_user.name}" WITH LOGIN;
 GRANT ALL PRIVILEGES ON SCHEMA public TO "${google_sql_user.iam_service_account_user.name}";
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "${google_sql_user.iam_service_account_user.name}";
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "${google_sql_user.iam_service_account_user.name}";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO "${google_sql_user.iam_service_account_user.name}";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO "${google_sql_user.iam_service_account_user.name}";
+
+-- Bastion用IAMユーザーにLOGIN権限と権限を付与
+ALTER ROLE "${google_sql_user.bastion_iam_user.name}" WITH LOGIN;
+GRANT ALL PRIVILEGES ON SCHEMA public TO "${google_sql_user.bastion_iam_user.name}";
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "${google_sql_user.bastion_iam_user.name}";
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "${google_sql_user.bastion_iam_user.name}";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO "${google_sql_user.bastion_iam_user.name}";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO "${google_sql_user.bastion_iam_user.name}";
 SQL
 
 echo "Permissions granted successfully!"
@@ -254,58 +281,4 @@ echo "Cleaning up..."
   EOT
   
   file_permission = "0755"
-}
-
-# 管理用ユーザーを使用してIAM認証ユーザーにDB作成権限を付与
-resource "local_file" "grant_permissions_script" {
-  filename = "${path.module}/grant_permissions.sh"
-  content = <<-EOT
-#!/bin/bash
-set -e
-
-# 現在のgcloudプロジェクト設定を保存
-ORIGINAL_PROJECT=$(gcloud config get-value project 2>/dev/null)
-
-# 一時的にプロジェクトを切り替え
-echo "Setting gcloud project to ${var.project_id}..."
-gcloud config set project ${var.project_id} --quiet
-
-echo "Starting Cloud SQL Proxy..."
-# Cloud SQL Proxyをバックグラウンドで起動（Private IP対応）
-# CLOUDSDK_CORE_PROJECTでデフォルトプロジェクトを明示的に設定
-CLOUDSDK_CORE_PROJECT=${var.project_id} cloud-sql-proxy --private-ip ${var.project_id}:${var.region}:${google_sql_database_instance.database.name} &
-PROXY_PID=$!
-
-# エラー時の後処理用トラップ
-trap "kill $PROXY_PID 2>/dev/null; gcloud config set project $ORIGINAL_PROJECT --quiet" EXIT
-
-# Proxyの起動を待つ
-echo "Waiting for Cloud SQL Proxy to be ready..."
-sleep 5
-
-# PostgreSQLに接続して権限を付与
-echo "Granting permissions to IAM user: ${google_sql_user.iam_service_account_user.name}"
-PGPASSWORD='${random_password.admin_password.result}' psql \
-  -h 127.0.0.1 \
-  -p 5432 \
-  -U postgres \
-  -d ${google_sql_database.database.name} \
-  <<'SQL'
-GRANT ALL PRIVILEGES ON SCHEMA public TO "${google_sql_user.iam_service_account_user.name}";
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "${google_sql_user.iam_service_account_user.name}";
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "${google_sql_user.iam_service_account_user.name}";
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO "${google_sql_user.iam_service_account_user.name}";
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO "${google_sql_user.iam_service_account_user.name}";
-SQL
-
-echo "Permissions granted successfully!"
-echo "Cleaning up (Cloud SQL Proxy will be stopped and gcloud project restored)..."
-  EOT
-  
-  file_permission = "0755"
-}
-
-output "grant_permissions_command" {
-  value = "Run: ${local_file.grant_permissions_script.filename}"
-  description = "Command to grant permissions to IAM user"
 }

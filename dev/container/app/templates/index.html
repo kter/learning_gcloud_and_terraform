@@ -96,8 +96,7 @@
 
     <div class="form-container">
         <h2>新しいTODOを追加</h2>
-        <form method="POST" action="{% url 'todo:create' %}">
-            {% csrf_token %}
+        <form method="POST" action="{{ url_for('main.create') }}">
             <input type="text" name="title" placeholder="タイトル" required>
             <textarea name="description" placeholder="説明（任意）" rows="3"></textarea>
             <button type="submit">追加</button>
@@ -117,14 +116,12 @@
                         {% endif %}
                     </div>
                     <div class="todo-actions">
-                        <form method="POST" action="{% url 'todo:toggle' todo.id %}" style="display: inline;">
-                            {% csrf_token %}
+                        <form method="POST" action="{{ url_for('main.toggle', todo_id=todo.id) }}" style="display: inline;">
                             <button type="submit" class="btn-toggle">
                                 {% if todo.completed %}未完了に戻す{% else %}完了{% endif %}
                             </button>
                         </form>
-                        <form method="POST" action="{% url 'todo:delete' todo.id %}" style="display: inline;">
-                            {% csrf_token %}
+                        <form method="POST" action="{{ url_for('main.delete', todo_id=todo.id) }}" style="display: inline;">
                             <button type="submit" class="btn-delete">削除</button>
                         </form>
                     </div>
