@@ -8,21 +8,22 @@ GCPとTerraformを使用したインフラストラクチャとアプリケー�
 make
 ```
 
-**これだけです！**全て自動でセットアップされます。
+**これだけです！**以降は普通のgitコマンドを使うだけ。
 
 ---
 
 ## 📝 日常的な開発
 
 ```bash
-make c              # コミット（自動lint付き）
-make c fix          # "fix" というメッセージでコミット
-make c add-feature  # "add feature" でコミット（ハイフンは空白に変換）
-make p              # プッシュ（自動lint付き）
-make l              # Lintチェック
+git commit -m "fix"     # コミット（軽量チェックのみ、高速！）
+git push                # プッシュ（自動でlint実行）
 ```
 
-**それだけです！**他に覚えることはありません。
+**それだけです！**`make` は初回のみ。以降は普通の `git` コマンドだけ。
+
+💡 **Git Hooksが自動で動く**
+- `git commit`: 軽量チェック（末尾空白、改行、YAMLなど）
+- `git push`: 全lintチェック（Terraform, Python, etc）
 
 ---
 
@@ -60,13 +61,12 @@ git push
 make
 
 # 日々の開発
-make c              # コミット（全自動）
-make c fix          # メッセージ指定も可
-make c add-feature  # ハイフンは空白に変換
-make p              # プッシュ（全自動）
+git commit -m "fix"     # 高速！（軽量チェックのみ）
+git push                # 自動lint→プッシュ
 ```
 
-**終わり。** 他に何も考える必要はありません。
+**終わり。** `make` を一度実行したら、あとは普通の `git` コマンドを使うだけ。
+**Git Hooksが全て自動処理** - コミットは高速、プッシュ時に品質保証！
 
 ---
 
@@ -92,24 +92,15 @@ make p              # プッシュ（全自動）
 
 ```bash
 # 🚀 初回セットアップ
-make              # 全自動セットアップ
+make (setup)      # 全自動セットアップ
 
-# 📝 日常開発（短縮コマンド）
-make c                # コミット（自動lint）
-make c fix            # "fix" でコミット
-make c add-feature    # "add feature" でコミット（-→空白）
-make p                # プッシュ（自動lint）
-make l                # Lintのみ
-make f                # フォーマットのみ
+# 📝 日常開発
+git commit        # コミット（自動で軽量チェック）
+git push          # プッシュ（自動でlint実行）
 
-# 📝 日常開発（フルネーム）
-make commit           # = make c
-make commit fix       # "fix" でコミット
-make push             # = make p
-make lint             # = make l
-make fmt              # = make f
-
-# 🔍 確認・メンテナンス
+# 🔧 便利コマンド
+make lint         # 手動でlint実行
+make fmt          # コード整形
 make check        # 環境チェック
 make update       # ツール更新
 make clean        # キャッシュ削除
@@ -119,8 +110,7 @@ make reset        # 完全リセット
 make build        # Dockerビルド＆プッシュ
 
 # 📚 ヘルプ
-make help         # よく使うコマンド
-make help-detailed # 全コマンド
+make help         # コマンド一覧表示
 ```
 
 </details>
@@ -264,9 +254,12 @@ MIT
 インフラ・ツール・ワークフローの**認知負荷を極限まで減らす**ことを目指しています。
 
 **覚えるコマンド**:
-- `make` - 初回のみ
-- `make c` - 日々のコミット（インタラクティブ）
-- `make c fix` - コミットメッセージ指定
-- `make p` - 日々のプッシュ
+- `make` - 初回セットアップのみ（一度だけ）
+- `git commit -m "..."` - 普通のコミット
+- `git push` - 普通のプッシュ
 
-**それだけ。** 変数名も引用符も不要です。
+**それだけ。** 特別なコマンドを覚える必要なし。普通の `git` コマンドを使うだけ。
+
+**Git Hooksが全て自動処理**:
+- コミット時: 軽量チェック（高速）
+- プッシュ時: 全lintチェック（品質保証）

@@ -9,24 +9,14 @@
 # ==============================================================================
 
 .DEFAULT_GOAL := init
-.PHONY: init setup auto-install-uv auto-install-tfenv lint fmt commit push clean help
-
-# コミットメッセージ（オプション）
-MSG ?=
-
-# コミット時に渡された追加の引数をメッセージとして扱う
-ifneq ($(filter commit c,$(MAKECMDGOALS)),)
-  COMMIT_ARGS := $(filter-out commit c,$(MAKECMDGOALS))
-  ifneq ($(COMMIT_ARGS),)
-    $(eval $(COMMIT_ARGS):;@:)
-    MSG := $(subst -, ,$(COMMIT_ARGS))
-  endif
-endif
+.PHONY: init setup auto-install-uv auto-install-tfenv auto-install-terraform auto-install-tflint auto-setup lint fmt check update clean reset build help
 
 # ------------------------------------------------------------------------------
 # 🎯 デフォルトターゲット - makeだけで全てセットアップ
 # ------------------------------------------------------------------------------
 init: banner auto-check auto-setup completion ## 🚀 初回セットアップ（makeだけでOK）
+
+setup: init ## 🔧 セットアップ（make と同じ）
 
 banner:
 	@echo ""
@@ -140,48 +130,21 @@ completion:
 	@echo "║  ✨ セットアップ完了！                                    ║"
 	@echo "╚════════════════════════════════════════════════════════════╝"
 	@echo ""
-	@echo "📝 よく使うコマンド:"
-	@echo "  make help          - 全コマンド表示"
-	@echo "  make check         - 環境チェック"
-	@echo "  make c             - 安全にコミット（自動lint+commit）"
-	@echo "  make c fix         - 'fix' というメッセージでコミット"
-	@echo "  make c add-feature - 'add feature' でコミット（-は空白に）"
-	@echo "  make p             - 安全にプッシュ（自動lint+push）"
+	@echo "🎉 準備完了！あとは普通のgitコマンドを使うだけです："
 	@echo ""
-	@echo "🎉 準備完了！コーディングを始めましょう！"
+	@echo "  git commit -m \"fix\"   # 高速コミット（軽量チェックのみ）"
+	@echo "  git push               # 自動でlint実行→プッシュ"
+	@echo ""
+	@echo "💡 その他のコマンド:"
+	@echo "  make help              # 全コマンド表示"
+	@echo "  make check             # 環境チェック"
+	@echo "  make lint              # 手動でlint実行"
 	@echo ""
 
 # ------------------------------------------------------------------------------
-# 🎨 日常的な開発コマンド（シンプル化）
+# 🎨 開発コマンド
 # ------------------------------------------------------------------------------
-c: commit ## 【短縮】コミット（make c でOK）
-p: push   ## 【短縮】プッシュ（make p でOK）
-l: lint   ## 【短縮】Lint実行（make l でOK）
-f: fmt    ## 【短縮】フォーマット（make f でOK）
-
-commit: lint ## 💾 自動lint後にコミット（認知負荷ゼロ）
-	@echo ""
-	@if [ -z "$(MSG)" ]; then \
-		echo "💾 コミットメッセージを入力してください:"; \
-		read -p "> " msg; \
-	else \
-		msg="$(MSG)"; \
-	fi; \
-	if [ -z "$$msg" ]; then \
-		echo "❌ コミットメッセージが空です"; \
-		exit 1; \
-	fi; \
-	git add -A; \
-	git commit -m "$$msg"
-	@echo "✅ コミット完了"
-
-push: lint ## 🚀 自動lint後にプッシュ（認知負荷ゼロ）
-	@echo ""
-	@echo "🚀 プッシュ中..."
-	@git push
-	@echo "✅ プッシュ完了"
-
-lint: auto-install-tflint ## ✨ コードチェック（自動修正付き）
+lint: auto-install-tflint ## ✨ 手動でLintチェック（通常は不要、git push時に自動実行）
 	@echo "✨ コードをチェック中..."
 	@pre-commit run --all-files || true
 	@echo "✅ チェック完了"
@@ -258,32 +221,28 @@ help: ## 📚 このヘルプを表示
 	@echo "║  📚 使用可能なコマンド                                    ║"
 	@echo "╚════════════════════════════════════════════════════════════╝"
 	@echo ""
-	@echo "🚀 はじめに:"
-	@echo "  make              初回セットアップ（これだけでOK！）"
+	@echo "🚀 初回セットアップ:"
+	@echo "  make (setup)      全自動セットアップ"
 	@echo ""
 	@echo "📝 日常的な開発:"
-	@echo "  make c (commit)             コミット（自動lint付き）"
-	@echo "  make c fix                  'fix' でコミット"
-	@echo "  make c add-feature          'add feature' でコミット（-→空白）"
-	@echo "  make p (push)               プッシュ（自動lint付き）"
-	@echo "  make l (lint)               コードチェック"
-	@echo "  make f (fmt)                コード整形"
+	@echo "  git commit        コミット（自動で軽量チェック実行）"
+	@echo "  git push          プッシュ（自動でlint実行）"
 	@echo ""
-	@echo "🔍 確認・メンテナンス:"
+	@echo "🔧 便利コマンド:"
+	@echo "  make lint         手動でlint実行"
+	@echo "  make fmt          コード整形"
 	@echo "  make check        環境チェック"
 	@echo "  make update       ツール更新"
 	@echo "  make clean        キャッシュ削除"
 	@echo "  make reset        完全リセット"
-	@echo ""
-	@echo "📦 デプロイ:"
 	@echo "  make build        Dockerビルド＆プッシュ"
 	@echo ""
-	@echo "💡 Tips:"
-	@echo "  - 'make c' だけでlint→commitが完了"
-	@echo "  - 'make c fix' でメッセージ指定も可"
-	@echo "  - 'make c add-feature' でハイフンが空白に変換"
-	@echo "  - 'make p' だけでlint→pushが完了"
-	@echo "  - Git hooksが自動でlintを実行"
+	@echo "💡 Philosophy:"
+	@echo "  - 初回に 'make' を一度実行するだけ"
+	@echo "  - 以降は普通の git コマンドを使うだけ"
+	@echo "  - git commit: 軽量チェック（高速）"
+	@echo "  - git push: 全lintチェック（品質保証）"
+	@echo "  - 究極の認知負荷ゼロ！"
 	@echo ""
 
 # ------------------------------------------------------------------------------
