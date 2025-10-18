@@ -5,9 +5,9 @@
 # - Service Networking Connection (VPC Peering)
 # - サーバーレスVPCアクセスコネクタ
 resource "google_compute_network" "vpc_network" {
-  name                    = "vpc-network"
+  name                    = var.network_name
   project                 = var.project_id
-  auto_create_subnetworks = false
+  auto_create_subnetworks = var.auto_create_subnetworks
 
   lifecycle {
     # 本番環境では以下をコメント解除
@@ -23,10 +23,10 @@ resource "google_compute_network" "vpc_network" {
 # サーバーレスIPアドレスが自動的に割り当てられます
 # これらのIPアドレスがクリーンアップされるまでサブネットを削除できません
 resource "google_compute_subnetwork" "subnetwork" {
-  name          = "subnetwork"
+  name          = var.subnetwork_name
   project       = var.project_id
   network       = google_compute_network.vpc_network.self_link
-  ip_cidr_range = "10.0.0.0/24"
+  ip_cidr_range = var.ip_cidr_range
   region        = var.region
 
   lifecycle {
