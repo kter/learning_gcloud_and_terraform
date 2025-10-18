@@ -1,13 +1,13 @@
 terraform {
   // terraformのバージョンを現在の最新のバージョン以降で指定
   required_version = "~> 1.13.1"
-  
+
   // GCSバックエンド設定
   backend "gcs" {
     bucket = "gcloud-and-terraform-state"
     prefix = "dev/terraform.tfstate"
   }
-  
+
   // Google Providerの現在の最新のバージョン以降で指定
   required_providers {
     google = {
@@ -21,8 +21,8 @@ provider "google" {
   region  = var.region
 
   default_labels = {
-    "Managed by" = "Terraform"
+    "Managed by"  = "Terraform"
     "Environment" = "dev"
-    "Repository" = "learning_gcloud_and_terraform"
+    "Repository"  = "learning_gcloud_and_terraform"
   }
 }

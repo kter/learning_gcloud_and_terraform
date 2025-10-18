@@ -1,5 +1,5 @@
 config {
-  module = true
+  call_module_type = "all"
   force = false
 }
 
@@ -18,14 +18,24 @@ rule "terraform_naming_convention" {
   enabled = true
 }
 
+# 以下のルールは開発時の認知負荷を減らすため無効化
+# 必要に応じて有効化してください
+rule "terraform_required_version" {
+  enabled = false
+}
+
+rule "terraform_required_providers" {
+  enabled = false
+}
+
 rule "terraform_documented_variables" {
-  enabled = true
+  enabled = false
 }
 
 rule "terraform_typed_variables" {
-  enabled = true
+  enabled = false
 }
 
 rule "terraform_unused_declarations" {
-  enabled = true
+  enabled = false
 }

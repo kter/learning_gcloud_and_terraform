@@ -1,3 +1,23 @@
+[project]
+name = "todo-app"
+version = "0.1.0"
+description = "Simple TODO application with Django + PostgreSQL"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0.0",
+    "flask-sqlalchemy>=3.1.0",
+    "psycopg2-binary>=2.9.0",
+    "cloud-sql-python-connector>=1.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.3.0",
+    "isort>=5.13.0",
+    "flake8>=7.0.0",
+]
+
 [tool.black]
 line-length = 88
 target-version = ['py311']
@@ -15,3 +35,7 @@ exclude = '''
 profile = "black"
 line_length = 88
 skip_gitignore = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

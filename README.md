@@ -2,194 +2,271 @@
 
 GCPとTerraformを使用したインフラストラクチャとアプリケーションのデプロイプロジェクト
 
-## プロジェクト構成
+## 🚀 クイックスタート（1コマンド）
+
+```bash
+make
+```
+
+**これだけです！**全て自動でセットアップされます。
+
+---
+
+## 📝 日常的な開発
+
+```bash
+make c              # コミット（自動lint付き）
+make c fix          # "fix" というメッセージでコミット
+make c add-feature  # "add feature" でコミット（ハイフンは空白に変換）
+make p              # プッシュ（自動lint付き）
+make l              # Lintチェック
+```
+
+**それだけです！**他に覚えることはありません。
+
+---
+
+## 🎯 思想：認知負荷ゼロ
+
+このプロジェクトは、開発者が**考えることを最小限にする**よう設計されています：
+
+### ❌ 従来の開発フロー
+```bash
+# 1. 何かをインストール（何をインストールするか調べる）
+brew install X Y Z
+
+# 2. セットアップ（手順を調べる）
+pyenv install 3.11
+pipx install pre-commit
+...
+
+# 3. コミット前に手動でLint（忘れがち）
+terraform fmt -recursive
+black .
+isort .
+flake8 .
+
+# 4. コミット
+git add .
+git commit -m "..."
+
+# 5. プッシュ前にもう一度チェック？（面倒）
+git push
+```
+
+### ✅ このプロジェクトの開発フロー
+```bash
+# 初回のみ
+make
+
+# 日々の開発
+make c              # コミット（全自動）
+make c fix          # メッセージ指定も可
+make c add-feature  # ハイフンは空白に変換
+make p              # プッシュ（全自動）
+```
+
+**終わり。** 他に何も考える必要はありません。
+
+---
+
+## 📚 詳細情報（必要な時だけ）
+
+<details>
+<summary><b>💡 自動でインストールされるもの</b></summary>
+
+`make` を実行すると、以下が自動的にインストール・設定されます：
+
+- ✅ **uv**: 超高速Pythonツールマネージャー
+- ✅ **tfenv**: Terraformバージョン管理
+- ✅ **terraform**: 必要なバージョン（.terraform-versionから）
+- ✅ **pre-commit**: Git hooks管理
+- ✅ **Git hooks**: コミット/プッシュ時の自動チェック
+
+すべて自動。何も考える必要はありません。
+
+</details>
+
+<details>
+<summary><b>🎨 使用可能なコマンド一覧</b></summary>
+
+```bash
+# 🚀 初回セットアップ
+make              # 全自動セットアップ
+
+# 📝 日常開発（短縮コマンド）
+make c                # コミット（自動lint）
+make c fix            # "fix" でコミット
+make c add-feature    # "add feature" でコミット（-→空白）
+make p                # プッシュ（自動lint）
+make l                # Lintのみ
+make f                # フォーマットのみ
+
+# 📝 日常開発（フルネーム）
+make commit           # = make c
+make commit fix       # "fix" でコミット
+make push             # = make p
+make lint             # = make l
+make fmt              # = make f
+
+# 🔍 確認・メンテナンス
+make check        # 環境チェック
+make update       # ツール更新
+make clean        # キャッシュ削除
+make reset        # 完全リセット
+
+# 📦 デプロイ
+make build        # Dockerビルド＆プッシュ
+
+# 📚 ヘルプ
+make help         # よく使うコマンド
+make help-detailed # 全コマンド
+```
+
+</details>
+
+<details>
+<summary><b>🏗️ プロジェクト構成</b></summary>
 
 ```
 .
 ├── app/                    # Djangoアプリケーション
 ├── env/                    # 環境別インフラ設定
-│   ├── deploy/            # デプロイ関連リソース
 │   └── dev/               # 開発環境
-│       ├── vpc/           # VPCネットワーク
-│       ├── iam/           # IAM設定
-│       ├── db/            # Cloud SQL
-│       ├── cloudrun/      # Cloud Run
-│       └── loadbalancer/  # Load Balancer
-└── modules/               # 再利用可能なTerraformモジュール
-    ├── vpc/
-    ├── iam/
-    ├── db/
-    ├── cloudrun/
-    └── loadbalancer/
+│       ├── vpc/           # VPCモジュール使用
+│       ├── iam/           # IAMモジュール使用
+│       ├── db/            # DBモジュール使用
+│       ├── cloudrun/      # Cloud Runモジュール使用
+│       └── loadbalancer/  # LBモジュール使用
+├── modules/               # 再利用可能なTerraformモジュール
+│   ├── vpc/
+│   ├── iam/
+│   ├── db/
+│   ├── cloudrun/
+│   └── loadbalancer/
+├── .pre-commit-config.yaml # Linter設定
+├── pyproject.toml         # Python依存関係
+├── Makefile               # 全自動化の核心
+└── README.md              # このファイル
 ```
 
-## 必要な環境
+</details>
 
-- Terraform >= 1.5.0
-- Python 3.11+
-- Docker
-- gcloud CLI
+<details>
+<summary><b>🔧 カスタマイズ</b></summary>
 
-## 開発環境のセットアップ
+### Linterの設定変更
 
-### 1. Git Hooksのセットアップ（重要）
-
-リポジトリをクローンしたら、まずGit hooksを設定してください：
+`.pre-commit-config.yaml` を編集してください。変更後：
 
 ```bash
-make setup-hooks
+make update    # 設定を反映
 ```
 
-これにより、`git push`実行時に自動的に以下が実行されます：
-- `make fmt`: コードの自動フォーマット
-- `make lint`: Linterチェック
+### Terraformバージョン変更
 
-**フックの動作**:
-- pushする前に自動でコードをフォーマット
-- Linterエラーがあればpushをブロック
-- 緊急時は `git push --no-verify` でバイパス可能（非推奨）
+`.terraform-version` を編集してください。次回 `make` 実行時に自動適用されます。
 
-### 2. Linterのインストール
+### Pythonバージョン変更
 
-#### Terraform
-```bash
-# TFLintのインストール（macOS）
-brew install tflint
+`.python-version` を編集してください（オプション）。
 
-# TFLintの初期化
-tflint --init
-```
+</details>
 
-#### Python
-```bash
-# Python Linterのインストール
-pip install black flake8 isort
-```
+<details>
+<summary><b>🐛 トラブルシューティング</b></summary>
 
-### 3. Linterの実行
-
-プロジェクトルートで以下のコマンドを実行：
+### 問題が発生したら
 
 ```bash
-# すべてのLinterを実行
-make lint
-
-# Terraformのみ
-make lint-tf
-
-# Pythonのみ
-make lint-py
+make reset    # 完全リセット
+make          # 再セットアップ
 ```
 
-### 4. コードフォーマット
+### 環境をチェックしたい
 
 ```bash
-# すべてのコードをフォーマット
-make fmt
-
-# Terraformのみ
-make fmt-tf
-
-# Pythonのみ
-make fmt-py
+make check
 ```
 
-## CI/CD
+### それでも解決しない場合
 
-### GitHub Actions
+1. このリポジトリをクローンし直す
+2. `make` を実行
+3. それでもダメなら Issue を開いてください
 
-PRを作成すると、以下のチェックが自動実行されます：
+</details>
 
-- **Terraform Checks**
-  - `terraform fmt -check -recursive`: フォーマットチェック
-  - `tflint`: 静的解析
+<details>
+<summary><b>🎓 技術スタック（興味がある人向け）</b></summary>
 
-- **Python Checks**
-  - `black --check`: コードフォーマットチェック
-  - `isort --check`: インポート順序チェック
-  - `flake8`: リンティング
+### インフラ
+- **Terraform**: IaC（Infrastructure as Code）
+- **GCP**: Cloud Provider
+- **モジュール設計**: 再利用可能な構成
 
-### PRテンプレート
+### CI/CD
+- **pre-commit**: Git hooks管理
+- **GitHub Actions**: 自動テスト
+- **uv**: 超高速Pythonツール管理
 
-PRを作成すると、自動的にチェックリストが表示されます。PRマージ前に以下を確認してください：
+### 開発体験
+- **Makefile**: 全自動化
+- **認知負荷ゼロ設計**: コマンドを覚える必要がない
+- **自動修復**: Lintエラーを自動修正
 
-- [ ] `make lint` が通ること
-- [ ] `make fmt` でコードがフォーマットされていること
-- [ ] `terraform plan` で意図しない変更がないこと
+</details>
 
-## デプロイ
+<details>
+<summary><b>❓ FAQ</b></summary>
 
-### インフラのデプロイ
+**Q: なぜ `make` だけで全て動くの？**
+A: Makefileが依存関係を自動チェック・インストールするように設計されています。
+
+**Q: グローバル環境を汚染しない？**
+A: はい。uvとtfenvだけがグローバルインストールされ、他は全て隔離環境です。
+
+**Q: 既存のプロジェクトに導入できる？**
+A: はい。`.pre-commit-config.yaml`と`Makefile`をコピーして`make`を実行してください。
+
+**Q: WindowsでもOK？**
+A: WSL2を使用すれば動作します。ネイティブWindows対応は現在未対応です。
+
+**Q: カスタムLinterを追加したい**
+A: `.pre-commit-config.yaml`に追加して `make update` を実行してください。
+
+</details>
+
+---
+
+## 🤝 コントリビューション
+
+PR歓迎！以下を実行するだけ：
 
 ```bash
-# 開発環境へのデプロイ
-cd env/dev/<resource>
-terraform init
-terraform plan
-terraform apply
+make c    # 自動lint→コミット
+make p    # 自動lint→プッシュ→PR作成
 ```
 
-### アプリケーションのデプロイ
+---
 
-```bash
-# Dockerイメージのビルドとプッシュ
-make build
-
-# または直接
-cd app
-make buildpush
-```
-
-## 便利なコマンド
-
-```bash
-make help           # 利用可能なコマンド一覧を表示
-make setup-hooks    # Git hooksを設定（初回のみ）
-make check-hooks    # Git hooksが設定されているか確認
-make lint           # すべてのLinterを実行
-make lint-tf        # Terraformのみlint
-make lint-py        # Pythonのみlint
-make fmt            # すべてのコードをフォーマット
-make fmt-tf         # Terraformのみフォーマット
-make fmt-py         # Pythonのみフォーマット
-make build          # Dockerイメージをビルド＆プッシュ
-```
-
-## モジュールの使い方
-
-各モジュールは再利用可能な設計になっています：
-
-```hcl
-module "vpc" {
-  source = "../../../modules/vpc"
-
-  project_id              = var.project_id
-  region                  = var.region
-  network_name            = "vpc-network"
-  subnetwork_name         = "subnetwork"
-  ip_cidr_range           = "10.0.0.0/24"
-  auto_create_subnetworks = false
-}
-```
-
-詳細は各モジュールのREADMEを参照してください。
-
-## トラブルシューティング
-
-### Linterエラーが出る場合
-
-1. フォーマットを実行: `make fmt`
-2. エラーメッセージを確認して修正
-3. 再度Linterを実行: `make lint`
-
-### Terraform Validateエラー
-
-```bash
-cd <該当ディレクトリ>
-terraform init
-terraform validate
-```
-
-## ライセンス
+## 📄 ライセンス
 
 MIT
+
+---
+
+## 💡 Philosophy
+
+> "The best developer experience is the one you don't have to think about."
+
+このプロジェクトは、開発者が**本質的な問題解決に集中できる**よう、
+インフラ・ツール・ワークフローの**認知負荷を極限まで減らす**ことを目指しています。
+
+**覚えるコマンド**:
+- `make` - 初回のみ
+- `make c` - 日々のコミット（インタラクティブ）
+- `make c fix` - コミットメッセージ指定
+- `make p` - 日々のプッシュ
+
+**それだけ。** 変数名も引用符も不要です。
