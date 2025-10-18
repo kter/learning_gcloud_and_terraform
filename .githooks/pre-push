@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# Pre-push hook to run linters and formatters
+# This hook is called by "git push" and can be bypassed with "git push --no-verify"
+
+set -e
+
+echo "🔍 Running pre-push checks..."
+echo ""
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check if make is available
+if ! command -v make &> /dev/null; then
+    echo -e "${RED}❌ make command not found${NC}"
+    exit 1
+fi
+
+# Function to run command and check result
+run_check() {
+    local name=$1
+    local command=$2
+
+    echo -e "${YELLOW}Running $name...${NC}"
+    if eval "$command"; then
+        echo -e "${GREEN}✅ $name passed${NC}"
+        echo ""
+        return 0
+    else
+        echo -e "${RED}❌ $name failed${NC}"
+        echo ""
+        return 1
+    fi
+}
+
+# Track if any check failed
+failed=0
+
+# Run formatter first
+echo "======================================"
+echo "Step 1: Auto-formatting code"
+echo "======================================"
+echo ""
+
+if run_check "Code formatting" "make fmt"; then
+    # Check if there are any changes after formatting
+    if ! git diff --quiet; then
+        echo -e "${YELLOW}⚠️  Code was auto-formatted. Changes detected:${NC}"
+        git diff --stat
+        echo ""
+        echo -e "${YELLOW}📝 Staged changes have been formatted.${NC}"
+        echo -e "${YELLOW}   Please review the changes and commit them.${NC}"
+        echo ""
+
+        # Stage the formatted files
+        git add -u
+
+        echo -e "${YELLOW}✨ Formatted files have been staged.${NC}"
+        echo -e "${YELLOW}   Continuing with push...${NC}"
+        echo ""
+    fi
+else
+    echo -e "${RED}❌ Formatting failed${NC}"
+    failed=1
+fi
+
+# Run linters
+echo "======================================"
+echo "Step 2: Running linters"
+echo "======================================"
+echo ""
+
+if ! run_check "Terraform linting" "make lint-tf"; then
+    failed=1
+fi
+
+if ! run_check "Python linting" "make lint-py"; then
+    failed=1
+fi
+
+# Final result
+echo "======================================"
+if [ $failed -eq 0 ]; then
+    echo -e "${GREEN}✅ All pre-push checks passed!${NC}"
+    echo "======================================"
+    echo ""
+    exit 0
+else
+    echo -e "${RED}❌ Some pre-push checks failed${NC}"
+    echo "======================================"
+    echo ""
+    echo "To bypass these checks, use: git push --no-verify"
+    echo "However, it's recommended to fix the issues first."
+    echo ""
+    exit 1
+fi
