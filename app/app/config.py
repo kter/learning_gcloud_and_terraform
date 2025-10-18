@@ -2,22 +2,24 @@
 Flask application configuration
 Handles database connections for both local and Cloud Run environments
 """
+
 import os
+
 from google.cloud.sql.connector import Connector
-import sqlalchemy
 
-
-ENV = os.environ.get('ENV', 'local')
+ENV = os.environ.get("ENV", "local")
 
 
 class Config:
     """Base configuration"""
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 class LocalConfig(Config):
     """Local development configuration using Docker Compose PostgreSQL"""
+
     SQLALCHEMY_DATABASE_URI = (
         f"postgresql://{os.environ.get('DB_USER', 'postgres')}:"
         f"{os.environ.get('DB_PASSWORD', 'postgres')}@"
@@ -38,10 +40,10 @@ class CloudRunConfig(Config):
     def getconn(self):
         """Cloud SQL接続を作成する関数"""
         return self.connector.connect(
-            os.environ.get('INSTANCE_CONNECTION_NAME'),
+            os.environ.get("INSTANCE_CONNECTION_NAME"),
             "pg8000",
-            user=os.environ.get('DB_USER'),
-            db=os.environ.get('DB_NAME'),
+            user=os.environ.get("DB_USER"),
+            db=os.environ.get("DB_NAME"),
             enable_iam_auth=True,
             ip_type="PRIVATE",
         )
@@ -50,9 +52,9 @@ class CloudRunConfig(Config):
     def SQLALCHEMY_ENGINE_OPTIONS(self):
         """SQLAlchemy経由でCloud SQL Connectorを使用"""
         return {
-            'creator': self.getconn,
-            'pool_pre_ping': True,
-            'pool_recycle': 3600,
+            "creator": self.getconn,
+            "pool_pre_ping": True,
+            "pool_recycle": 3600,
         }
 
     # SQLAlchemy経由でCloud SQL接続を使用
@@ -61,7 +63,7 @@ class CloudRunConfig(Config):
 
 def get_config():
     """環境に応じた設定を返す"""
-    if ENV == 'local':
+    if ENV == "local":
         return LocalConfig()
     else:
         return CloudRunConfig()

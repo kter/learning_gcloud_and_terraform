@@ -2,10 +2,11 @@
 Flask TODO Application
 Supports both local development (Docker Compose) and Cloud Run deployment
 """
-from flask import Flask
-from config import get_config
-from models import db
+
 import routes
+from config import get_config
+from flask import Flask
+from models import db
 
 
 def create_app():
@@ -29,6 +30,6 @@ def create_app():
     return app
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = create_app()
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)

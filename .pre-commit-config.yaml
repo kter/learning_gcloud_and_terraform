@@ -1,0 +1,110 @@
+repos:
+  # =============================================================================
+  # Pre-push hooks: 品質チェック（git push 時のみ実行）
+  # =============================================================================
+
+  # Terraform hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.88.4
+    hooks:
+      - id: terraform_fmt
+        name: Terraform format
+        description: Rewrites all Terraform configuration files to a canonical format
+        stages: [push]
+
+      - id: terraform_validate
+        name: Terraform validate
+        description: Validates all Terraform configuration files
+        stages: [push]
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
+
+      - id: terraform_tflint
+        name: Terraform lint
+        description: Validates all Terraform configuration files with TFLint
+        stages: [push]
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+
+  # Python hooks
+  - repo: https://github.com/psf/black
+    rev: 24.3.0
+    hooks:
+      - id: black
+        name: Black (Python formatter)
+        language_version: python3.11
+        files: ^app/.*\.py$
+        stages: [push]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        name: isort (import sorter)
+        files: ^app/.*\.py$
+        args: ["--profile", "black"]
+        stages: [push]
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        name: Flake8 (Python linter)
+        files: ^app/.*\.py$
+        args: ["--config=app/.flake8"]
+        stages: [push]
+
+  # =============================================================================
+  # Pre-commit hooks: 軽量チェック（git commit 時に実行）
+  # =============================================================================
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        exclude: ^app/app/templates/
+        stages: [commit]
+
+      - id: end-of-file-fixer
+        name: Fix end of files
+        exclude: ^app/app/templates/
+        stages: [commit]
+
+      - id: check-yaml
+        name: Check YAML syntax
+        args: ['--unsafe']
+        stages: [commit]
+
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+        stages: [commit]
+
+      - id: detect-private-key
+        name: Detect private keys
+        stages: [commit]
+
+  # =============================================================================
+  # Pre-push only: ファイルサイズチェック
+  # =============================================================================
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+        stages: [push]
+
+# Configuration for pre-commit.ci (optional)
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

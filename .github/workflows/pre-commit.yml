@@ -1,0 +1,46 @@
+name: Pre-commit Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  pre-commit:
+    name: Run pre-commit hooks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install tfenv
+        run: |
+          git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv
+          echo "$HOME/.tfenv/bin" >> $GITHUB_PATH
+
+      - name: Install Terraform
+        run: |
+          tfenv install
+          tfenv use
+
+      - name: Install TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Initialize TFLint
+        run: tflint --init
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1

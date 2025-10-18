@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.13.1"
+  required_version = "~> 1.5.0"
 
   backend "gcs" {
     bucket = "gcloud-and-terraform-state"

@@ -47,7 +47,7 @@ variable "container_port" {
 }
 
 variable "resource_limits" {
-  type = map(string)
+  type        = map(string)
   description = "Resource limits for the container"
   default = {
     cpu    = "1"
