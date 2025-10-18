@@ -1,7 +1,15 @@
 output "vpc_network" {
-  value = google_compute_network.vpc_network.self_link
+  value = module.vpc.vpc_network_self_link
+}
+
+output "vpc_network_name" {
+  value = module.vpc.vpc_network_name
 }
 
 output "subnetwork" {
-  value = google_compute_subnetwork.subnetwork.self_link
+  value = module.vpc.subnetwork_self_link
+}
+
+output "subnetwork_name" {
+  value = module.vpc.subnetwork_name
 }

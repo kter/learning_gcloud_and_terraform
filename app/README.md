@@ -7,7 +7,7 @@
 ### 1. Docker Composeで起動
 
 ```bash
-cd /Users/ttakahashi/workspace/learning_gcloud_and_terraform/dev/container
+cd /Users/ttakahashi/workspace/learning_gcloud_and_terraform/app
 docker-compose up -d
 ```
 
@@ -56,7 +56,7 @@ docker push asia-northeast1-docker.pkg.dev/PROJECT_ID/django-app/app:latest
 2. Terraformでデプロイ:
 
 ```bash
-cd ../cloudrun
+cd env/dev/cloudrun
 terraform apply
 ```
 
