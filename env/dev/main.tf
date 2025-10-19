@@ -21,8 +21,8 @@ provider "google" {
   region  = var.region
 
   default_labels = {
-    "Managed by"  = "Terraform"
-    "Environment" = "dev"
-    "Repository"  = "learning_gcloud_and_terraform"
+    "managed-by"  = "terraform"
+    "environment" = "dev"
+    "repository"  = "learning_gcloud_and_terraform"
   }
 }

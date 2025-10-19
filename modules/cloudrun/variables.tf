@@ -35,6 +35,12 @@ variable "artifact_repository_id" {
   description = "ID of the Artifact Registry repository"
 }
 
+variable "artifact_registry_project_id" {
+  type        = string
+  description = "Project ID where Artifact Registry repository is located. If not specified, uses the current project_id."
+  default     = ""
+}
+
 variable "container_image" {
   type        = string
   description = "Container image name with tag (e.g., 'app:latest')"
