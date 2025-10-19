@@ -1,0 +1,9 @@
+module "database" {
+  source = "../../../modules/db"
+
+  project_id = var.project_id
+  region     = var.region
+
+  vpc_network_name = "vpc-network"
+  subnetwork_name  = "subnetwork"
+}
