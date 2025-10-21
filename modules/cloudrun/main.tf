@@ -6,7 +6,7 @@ data "google_compute_subnetwork" "subnetwork" {
 
 data "google_artifact_registry_repository" "repository" {
   repository_id = var.artifact_repository_id
-  project       = var.project_id
+  project       = var.artifact_registry_project_id != "" ? var.artifact_registry_project_id : var.project_id
   location      = var.region
 }
 

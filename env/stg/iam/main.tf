@@ -1,7 +1,7 @@
 terraform {
   backend "gcs" {
     bucket = "gcloud-and-terraform-state"
-    prefix = "dev/iam/terraform.tfstate"
+    prefix = "stg/iam/terraform.tfstate"
   }
 }
 

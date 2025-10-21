@@ -10,19 +10,19 @@ repos:
       - id: terraform_fmt
         name: Terraform format
         description: Rewrites all Terraform configuration files to a canonical format
-        stages: [push]
+        stages: [pre-push]
 
       - id: terraform_validate
         name: Terraform validate
         description: Validates all Terraform configuration files
-        stages: [push]
+        stages: [pre-push]
         args:
           - --hook-config=--retry-once-with-cleanup=true
 
       - id: terraform_tflint
         name: Terraform lint
         description: Validates all Terraform configuration files with TFLint
-        stages: [push]
+        stages: [pre-push]
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
 
@@ -34,7 +34,7 @@ repos:
         name: Black (Python formatter)
         language_version: python3.11
         files: ^app/.*\.py$
-        stages: [push]
+        stages: [pre-push]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
@@ -43,7 +43,7 @@ repos:
         name: isort (import sorter)
         files: ^app/.*\.py$
         args: ["--profile", "black"]
-        stages: [push]
+        stages: [pre-push]
 
   - repo: https://github.com/pycqa/flake8
     rev: 7.0.0
@@ -52,7 +52,7 @@ repos:
         name: Flake8 (Python linter)
         files: ^app/.*\.py$
         args: ["--config=app/.flake8"]
-        stages: [push]
+        stages: [pre-push]
 
   # =============================================================================
   # Pre-commit hooks: 軽量チェック（git commit 時に実行）
@@ -64,25 +64,25 @@ repos:
       - id: trailing-whitespace
         name: Trim trailing whitespace
         exclude: ^app/app/templates/
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: end-of-file-fixer
         name: Fix end of files
         exclude: ^app/app/templates/
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: check-yaml
         name: Check YAML syntax
         args: ['--unsafe']
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: check-merge-conflict
         name: Check for merge conflicts
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: detect-private-key
         name: Detect private keys
-        stages: [commit]
+        stages: [pre-commit]
 
   # =============================================================================
   # Pre-push only: ファイルサイズチェック
@@ -94,7 +94,7 @@ repos:
       - id: check-added-large-files
         name: Check for large files
         args: ['--maxkb=1000']
-        stages: [push]
+        stages: [pre-push]
 
 # Configuration for pre-commit.ci (optional)
 ci:

@@ -5,7 +5,7 @@ terraform {
   // GCSバックエンド設定
   backend "gcs" {
     bucket = "gcloud-and-terraform-state"
-    prefix = "dev/terraform.tfstate"
+    prefix = "stg/terraform.tfstate"
   }
 
   // Google Providerの現在の最新のバージョン以降で指定
@@ -22,7 +22,7 @@ provider "google" {
 
   default_labels = {
     "managed-by"  = "terraform"
-    "environment" = "dev"
+    "environment" = "stg"
     "repository"  = "learning_gcloud_and_terraform"
   }
 }
