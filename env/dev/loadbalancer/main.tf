@@ -1,3 +1,10 @@
+terraform {
+  backend "gcs" {
+    bucket = "gcloud-and-terraform-state"
+    prefix = "dev/loadbalancer/terraform.tfstate"
+  }
+}
+
 module "loadbalancer" {
   source = "../../../modules/loadbalancer"
 
