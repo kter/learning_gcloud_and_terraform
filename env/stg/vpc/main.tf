@@ -1,3 +1,10 @@
+terraform {
+  backend "gcs" {
+    bucket = "gcloud-and-terraform-state"
+    prefix = "stg/vpc/terraform.tfstate"
+  }
+}
+
 module "vpc" {
   source = "../../../modules/vpc"
 

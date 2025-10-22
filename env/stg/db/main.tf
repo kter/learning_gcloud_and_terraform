@@ -1,3 +1,10 @@
+terraform {
+  backend "gcs" {
+    bucket = "gcloud-and-terraform-state"
+    prefix = "stg/db/terraform.tfstate"
+  }
+}
+
 module "database" {
   source = "../../../modules/db"
 
