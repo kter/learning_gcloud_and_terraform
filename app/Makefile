@@ -1,5 +1,5 @@
 
-REGISTRY_URL = asia-northeast1-docker.pkg.dev/gcloud-and-terraform/django-app
+REGISTRY_URL = asia-northeast1-docker.pkg.dev/gcloud-and-terraform/app
 
 buildpush:
 	cd app && \

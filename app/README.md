@@ -1,6 +1,6 @@
 # TODO App
 
-シンプルなTODOアプリケーション（Django + PostgreSQL）
+シンプルなTODOアプリケーション（Flask + PostgreSQL）
 
 ## ローカル開発環境のセットアップ
 
@@ -49,8 +49,8 @@ Cloud Run環境では以下の環境変数が必要です（Terraformで自動�
 
 ```bash
 cd app
-docker build -t asia-northeast1-docker.pkg.dev/PROJECT_ID/django-app/app:latest .
-docker push asia-northeast1-docker.pkg.dev/PROJECT_ID/django-app/app:latest
+docker build -t asia-northeast1-docker.pkg.dev/PROJECT_ID/app/app:latest .
+docker push asia-northeast1-docker.pkg.dev/PROJECT_ID/app/app:latest
 ```
 
 2. Terraformでデプロイ:

@@ -10,7 +10,7 @@ module "loadbalancer" {
 
   project_id            = var.project_id
   region                = var.region
-  cloudrun_service_name = "django-service"
+  cloudrun_service_name = "app-service"
   domains               = ["stg.gcp.tomohiko.io"]
   dns_zone_name         = "stg-gcp-tomohiko-io"
   dns_record_name       = "stg.gcp.tomohiko.io."

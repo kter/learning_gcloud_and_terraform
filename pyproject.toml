@@ -1,7 +1,7 @@
 [project]
 name = "learning-gcloud-and-terraform"
 version = "0.1.0"
-description = "GCP and Terraform infrastructure project with Django application"
+description = "GCP and Terraform infrastructure project with Flask application"
 readme = "README.md"
 requires-python = ">=3.11"
 

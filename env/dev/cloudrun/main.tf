@@ -10,11 +10,11 @@ module "cloudrun" {
 
   project_id             = var.project_id
   region                 = var.region
-  service_name           = "django-service"
+  service_name           = "app-service"
   deletion_protection    = false
   subnetwork_name        = "subnetwork"
   vpc_egress             = "PRIVATE_RANGES_ONLY"
-  artifact_repository_id = "django-app"
+  artifact_repository_id = "app"
   container_image        = "app:latest"
   container_port         = 8000
   database_name          = "database-${terraform.workspace}"
