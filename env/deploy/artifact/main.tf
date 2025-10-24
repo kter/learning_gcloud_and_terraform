@@ -25,11 +25,11 @@ provider "google" {
   }
 }
 
-resource "google_artifact_registry_repository" "django_app_repository" {
+resource "google_artifact_registry_repository" "app_repository" {
   project       = var.project_id
   location      = var.region
-  repository_id = "django-app"
-  description   = "Shared container repository for Django application"
+  repository_id = "app"
+  description   = "Shared container repository for application"
   format        = "DOCKER"
 
   cleanup_policies {
@@ -45,7 +45,7 @@ resource "google_artifact_registry_repository" "django_app_repository" {
 resource "google_artifact_registry_repository_iam_member" "dev_cloudrun_reader" {
   project    = var.project_id
   location   = var.region
-  repository = google_artifact_registry_repository.django_app_repository.name
+  repository = google_artifact_registry_repository.app_repository.name
   role       = "roles/artifactregistry.reader"
   member     = "serviceAccount:cloudrun@gcloud-and-terraform.iam.gserviceaccount.com"
 }
@@ -54,7 +54,7 @@ resource "google_artifact_registry_repository_iam_member" "dev_cloudrun_reader" 
 resource "google_artifact_registry_repository_iam_member" "stg_cloudrun_reader" {
   project    = var.project_id
   location   = var.region
-  repository = google_artifact_registry_repository.django_app_repository.name
+  repository = google_artifact_registry_repository.app_repository.name
   role       = "roles/artifactregistry.reader"
   member     = "serviceAccount:cloudrun@gcloud-and-terraform-stg.iam.gserviceaccount.com"
 }
@@ -65,7 +65,7 @@ resource "google_artifact_registry_repository_iam_member" "stg_cloudrun_reader" 
 resource "google_artifact_registry_repository_iam_member" "stg_service_agent_reader" {
   project    = var.project_id
   location   = var.region
-  repository = google_artifact_registry_repository.django_app_repository.name
+  repository = google_artifact_registry_repository.app_repository.name
   role       = "roles/artifactregistry.reader"
   member     = "serviceAccount:service-550365073229@serverless-robot-prod.iam.gserviceaccount.com"
 }
